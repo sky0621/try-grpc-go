@@ -14,10 +14,15 @@ import (
 
 type pSendServer struct{}
 
-func (s pSendServer) SendPerson(context.Context, *trygrpcgo.Person) (*trygrpcgo.SendPersonReply, error) {
+func (s pSendServer) SendPerson(ctx context.Context, p *trygrpcgo.Person) (*trygrpcgo.SendPersonReply, error) {
 	log.Println("[SendPerson]START")
-	// log.Println(p.Name)
-	return &trygrpcgo.SendPersonReply{Message: "send OK !?"}, nil
+	log.Println(p.Name)
+	log.Println(p.Id)
+	log.Println(p.Email)
+	for _, phone := range p.Phones {
+		log.Println(phone)
+	}
+	return &trygrpcgo.SendPersonReply{Message: "OK! We[server] are received your data."}, nil
 }
 
 var server trygrpcgo.PersonSenderServer
