@@ -17,8 +17,7 @@ type DirectMessagesServiceServerImpl struct{}
 
 // CreateMessage ...
 func (s DirectMessagesServiceServerImpl) CreateMessage(ctx context.Context, req *mygrpc.CreateMessageRequest) (*mygrpc.CreateMessageResponse, error) {
-	fmt.Printf("Target: %#v\n", req.MessageCreate.Target)
-	fmt.Printf("MessageData: %#v\n", req.MessageCreate.MessageData)
+	fmt.Printf("Target: %#v, MessageData: %#v\n", req.MessageCreate.Target, req.MessageCreate.MessageData)
 	return &mygrpc.CreateMessageResponse{
 		Event: &mygrpc.Event{
 			Id:               "1234567890",
