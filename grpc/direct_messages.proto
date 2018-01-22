@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package grpc;
+
+service DirectMessagesService {
+    rpc CreateMessage (CreateMessageRequest) returns (CreateMessageResponse);
+}
+
+message CreateMessageRequest {
+  // string type = "message_create";
+}
+
+message CreateMessageResponse {
+
+}
