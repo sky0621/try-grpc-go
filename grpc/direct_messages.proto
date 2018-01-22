@@ -8,8 +8,33 @@ service DirectMessagesService {
 
 message CreateMessageRequest {
   // string type = "message_create";
+
+  MessageCreate messageCreate = 1;
+
+}
+
+message MessageCreate {
+  Target target = 1;
+  MessageData messageData = 2;
+}
+
+message Target {
+  string recipient_id = 1;
+}
+
+message MessageData {
+  string text = 1;
 }
 
 message CreateMessageResponse {
+  Event event = 1;
+}
 
+message Event {
+  // string type = "message_create";
+
+  string id = 1;
+  string created_timestamp = 2;
+
+  // 省略
 }

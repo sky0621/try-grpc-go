@@ -1,44 +1,38 @@
 package main
 
 import (
-	"flag"
+	"fmt"
 	"log"
 	"net"
 
 	context "golang.org/x/net/context"
 
-	trygrpcgo "github.com/sky0621/try-grpc-go"
+	mygrpc "github.com/sky0621/try-grpc-go/grpc"
 
 	"google.golang.org/grpc"
 )
 
-type pSendServer struct{}
+// DirectMessagesServiceServerImpl ...
+type DirectMessagesServiceServerImpl struct{}
 
-func (s pSendServer) SendPerson(ctx context.Context, p *trygrpcgo.Person) (*trygrpcgo.SendPersonReply, error) {
-	log.Println("[SendPerson]START")
-	log.Println(p.Name)
-	log.Println(p.Id)
-	log.Println(p.Email)
-	for _, phone := range p.Phones {
-		log.Println(phone)
-	}
-	return &trygrpcgo.SendPersonReply{Message: "OK! We[server] are received your data."}, nil
+// CreateMessage ...
+func (s DirectMessagesServiceServerImpl) CreateMessage(ctx context.Context, req *mygrpc.CreateMessageRequest) (*mygrpc.CreateMessageResponse, error) {
+	fmt.Printf("Target: %#v\n", req.MessageCreate.Target)
+	fmt.Printf("MessageData: %#v\n", req.MessageCreate.MessageData)
+	return &mygrpc.CreateMessageResponse{
+		Event: &mygrpc.Event{
+			Id:               "1234567890",
+			CreatedTimestamp: "20180122",
+		},
+	}, nil
 }
 
-var server trygrpcgo.PersonSenderServer
-
 func main() {
-	addrFlag := flag.String("p", ":5050", "host:port")
-	lis, err := net.Listen("tcp", *addrFlag)
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 5050))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to listen: %v", err)
 	}
-
-	var svr trygrpcgo.PersonSenderServer
-	var pSvr pSendServer
-	svr = pSvr
-
 	grpcServer := grpc.NewServer()
-	trygrpcgo.RegisterPersonSenderServer(grpcServer, svr)
+	mygrpc.RegisterDirectMessagesServiceServer(grpcServer, &DirectMessagesServiceServerImpl{})
 	grpcServer.Serve(lis)
 }
