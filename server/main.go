@@ -18,6 +18,14 @@ type DirectMessagesServiceServerImpl struct{}
 // CreateMessage ...
 func (s DirectMessagesServiceServerImpl) CreateMessage(ctx context.Context, req *mygrpc.CreateMessageRequest) (*mygrpc.CreateMessageResponse, error) {
 	fmt.Printf("Target: %#v, MessageData: %#v\n", req.MessageCreate.Target, req.MessageCreate.MessageData)
+
+	iVal := ctx.Value("sampleKey")
+	if iVal == nil {
+		fmt.Println("iVal is nil")
+	} else {
+		fmt.Println(iVal.(string))
+	}
+
 	return &mygrpc.CreateMessageResponse{
 		Event: &mygrpc.Event{
 			Id:               "1234567890",

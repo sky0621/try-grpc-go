@@ -35,8 +35,8 @@ func main() {
 		idx: 0,
 	}
 
-	actionWithEachConnect(c)
-	// actionWithCommonConnect(c)
+	// actionWithEachConnect(c)
+	actionWithCommonConnect(c)
 
 	fmt.Println("[main] End")
 	fmt.Println(c.idx)
@@ -106,7 +106,9 @@ func createConn() *grpc.ClientConn {
 
 func createMessage(conn *grpc.ClientConn) error {
 	client := mygrpc.NewDirectMessagesServiceClient(conn)
-	_, err := client.CreateMessage(context.Background(), &mygrpc.CreateMessageRequest{
+	ctx := context.Background()
+	ctx2 := context.WithValue(ctx, "sampleKey", "sampleVal")
+	_, err := client.CreateMessage(ctx2, &mygrpc.CreateMessageRequest{
 		MessageCreate: &mygrpc.MessageCreate{
 			Target:      &mygrpc.Target{RecipientId: "recp123456"},
 			MessageData: &mygrpc.MessageData{Text: "Hello, GRPC!"},
