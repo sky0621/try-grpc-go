@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var loopCount = 10000
+var loopCount = 50000
 
 // Counter ...
 type Counter struct {
@@ -35,24 +35,42 @@ func main() {
 		idx: 0,
 	}
 
-	// part1(c)
-	part2(c)
+	actionWithEachConnect(c)
+	// actionWithCommonConnect(c)
 
 	fmt.Println("[main] End")
 	fmt.Println(c.idx)
 }
 
-func part1(c *Counter) {
+// 各goroutineでの実行の都度、コネクションを生成
+func actionWithEachConnect(c *Counter) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < loopCount; i++ {
 		wg.Add(1)
-		go tryOnetime(c, wg)
+		go func(c *Counter, wg *sync.WaitGroup) {
+			conn := createConn() // ★goroutine内でコネクション生成
+			if conn == nil {
+				return
+			}
+			defer func() {
+				time.Sleep(3 * time.Second)
+				conn.Close()
+				wg.Done()
+			}()
+			err := createMessage(conn)
+			if err != nil {
+				fmt.Printf("could not CreateMessage: %v\n", err)
+			}
+
+			c.CountUp()
+		}(c, wg)
 	}
 	wg.Wait()
 }
 
-func part2(c *Counter) {
-	conn := createConn()
+// 事前に生成済みのコネクションを各goroutineに渡して実行
+func actionWithCommonConnect(c *Counter) {
+	conn := createConn() // ★goroutine実行前にコネクションを生成
 	if conn == nil {
 		return
 	}
@@ -64,35 +82,17 @@ func part2(c *Counter) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < loopCount; i++ {
 		wg.Add(1)
-		go execCreateMessage(c, conn, wg)
+		go func(c *Counter, conn *grpc.ClientConn, wg *sync.WaitGroup) {
+			defer wg.Done()
+			err := createMessage(conn)
+			if err != nil {
+				fmt.Printf("could not CreateMessage: %v\n", err)
+			}
+
+			c.CountUp()
+		}(c, conn, wg)
 	}
 	wg.Wait()
-}
-
-func tryOnetime(c *Counter, wg *sync.WaitGroup) {
-	conn := createConn()
-	if conn == nil {
-		return
-	}
-	defer func() {
-		time.Sleep(3 * time.Second)
-		conn.Close()
-		wg.Done()
-	}()
-	client := mygrpc.NewDirectMessagesServiceClient(conn)
-	_, err := client.CreateMessage(context.Background(), &mygrpc.CreateMessageRequest{
-		MessageCreate: &mygrpc.MessageCreate{
-			Target:      &mygrpc.Target{RecipientId: "recp123456"},
-			MessageData: &mygrpc.MessageData{Text: "Hello, GRPC!"},
-		},
-	})
-	if err == nil {
-		// fmt.Println(res)
-	} else {
-		fmt.Printf("could not CreateMessage: %v\n", err)
-	}
-
-	c.CountUp()
 }
 
 func createConn() *grpc.ClientConn {
@@ -104,8 +104,7 @@ func createConn() *grpc.ClientConn {
 	return nil
 }
 
-func execCreateMessage(c *Counter, conn *grpc.ClientConn, wg *sync.WaitGroup) {
-	defer wg.Done()
+func createMessage(conn *grpc.ClientConn) error {
 	client := mygrpc.NewDirectMessagesServiceClient(conn)
 	_, err := client.CreateMessage(context.Background(), &mygrpc.CreateMessageRequest{
 		MessageCreate: &mygrpc.MessageCreate{
@@ -113,11 +112,5 @@ func execCreateMessage(c *Counter, conn *grpc.ClientConn, wg *sync.WaitGroup) {
 			MessageData: &mygrpc.MessageData{Text: "Hello, GRPC!"},
 		},
 	})
-	if err == nil {
-		// fmt.Println(res)
-	} else {
-		fmt.Printf("could not CreateMessage: %v\n", err)
-	}
-
-	c.CountUp()
+	return err
 }
